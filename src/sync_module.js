@@ -2,24 +2,16 @@ var SyncModule = function(appName)
 {
 	var _this = this;
 
-	var callbackOnSync = null;
 	var connManager = ConnectionManager;
 	var storeManager = new StorageManager(appName);
 	var syncer = new Syncer();
 	var syncFlag = false;
 
-	var onConnect = function()
-	{
-		setTimeout(function() {
-			_this.sync(callbackOnSync);
-		}, 3000);
-	};
-
-	var onDisconnect = function() {};
+	this.callbackOnSync = null;
 
 	this.init = function(apiHandler, syncCallback)
 	{
-		callbackOnSync = (typeof syncCallback == "function" ? syncCallback : null);
+		this.callbackOnSync = (typeof syncCallback == "function" ? syncCallback : null);
 		try
 		{
 			syncer.init(apiHandler);
@@ -29,9 +21,9 @@ var SyncModule = function(appName)
 			console.error(err);
 			syncer = null;
 		}
-		connManager.init(onConnect, onDisconnect);
+		connManager.init(SyncModule.onConnect, SyncModule.onDisconnect);
 		storeManager.init();
-		this.sync(callbackOnSync);
+		this.sync(this.callbackOnSync);
 	};
 
 	this.syncItem = function(item, callback)
@@ -148,5 +140,15 @@ var SyncModule = function(appName)
 		return syncFlag;
 	};
 };
+
+SyncModule.onConnect = function()
+{
+	var _this = this;
+	setTimeout(function() {
+		_this.sync(_this.callbackOnSync);
+	}, 3000);
+};
+
+SyncModule.onDisconnect = function() {};
 
 window.SyncModule = SyncModule;
