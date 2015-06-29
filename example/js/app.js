@@ -37,19 +37,33 @@ jQuery(function ($) {
 			}
 		}
 	};
-
+	
+	var syncModule = new SyncModule("todoApp");
 	var App = {
 		init: function () {
-			this.todos = util.store('todos-jquery');
-			this.cacheElements();
-			this.bindEvents();
-
-			new Router({
-				'/:filter': function (filter) {
-					this.filter = filter;
-					this.render();
-				}.bind(this)
-			}).init('/all');
+			var _this = this;
+			syncModule.init(ParseApiHandler, function(err, items) {
+				if(err === null)
+				{
+					_this.todos = [];
+					items.forEach(function(todo) {
+						_this.todos.push({
+							sync_id: todo.sync_id,
+							id: todo.obj.id,
+							completed: todo.obj.completed,
+							title: todo.obj.title
+						});
+					});
+					_this.cacheElements();
+					_this.bindEvents();
+					new Router({
+						'/:filter': function (filter) {
+							_this.filter = filter;
+							_this.render();
+						}.bind(_this)
+					}).init('/all');
+				}
+			});
 		},
 		cacheElements: function () {
 			this.todoTemplate = Handlebars.compile($('#todo-template').html());
@@ -97,10 +111,19 @@ jQuery(function ($) {
 			this.$footer.toggle(todoCount > 0).html(template);
 		},
 		toggleAll: function (e) {
+			var _this = this;
+			
 			var isChecked = $(e.target).prop('checked');
 
 			this.todos.forEach(function (todo) {
 				todo.completed = isChecked;
+				syncModule.update(todo.sync_id, todo, function(err, item) {
+					if(err == null) {
+						todo.sync_id = item.sync_id;
+						todo.id = item.obj.id;
+						_this.render();
+					}
+				});
 			});
 
 			this.render();
@@ -139,12 +162,13 @@ jQuery(function ($) {
 			var i = todos.length;
 
 			while (i--) {
-				if (todos[i].id === id) {
+				if (todos[i].sync_id === id) {
 					return i;
 				}
 			}
 		},
 		create: function (e) {
+			var _this = this;
 			var $input = $(e.target);
 			var val = $input.val().trim();
 
@@ -152,20 +176,34 @@ jQuery(function ($) {
 				return;
 			}
 
-			this.todos.push({
+			var todo = {
 				id: util.uuid(),
 				title: val,
 				completed: false
+			};
+
+			this.todos.push(todo);
+			syncModule.add(todo, function(err, item) {
+				todo.sync_id = item.sync_id;
+				if(err === null) {
+					todo.id = item.obj.id;
+				}
+				_this.render();
 			});
 
 			$input.val('');
-
-			this.render();
 		},
 		toggle: function (e) {
+			var _this = this;
 			var i = this.indexFromEl(e.target);
 			this.todos[i].completed = !this.todos[i].completed;
-			this.render();
+			syncModule.update(this.todos[i].sync_id, this.todos[i], function(err, item) {
+				_this.todos[i].sync_id = item.sync_id;
+				if(err == null) {
+					_this.todos[i].id = item.obj.id;
+				}
+				_this.render();
+			});
 		},
 		edit: function (e) {
 			var $input = $(e.target).closest('li').addClass('editing').find('.edit');
@@ -181,6 +219,7 @@ jQuery(function ($) {
 			}
 		},
 		update: function (e) {
+			var _this = this;
 			var el = e.target;
 			var $el = $(el);
 			var val = $el.val().trim();
@@ -195,14 +234,22 @@ jQuery(function ($) {
 
 			if (val) {
 				this.todos[i].title = val;
+				syncModule.update(this.todos[i].sync_id, this.todos[i], function(err, item) {
+					_this.todos[i].sync_id = item.sync_id;
+					if(err === null) {
+						_this.todos[i].id = item.obj.id;
+					}
+					_this.render();
+				});
 			} else {
-				this.todos.splice(i, 1);
+				var todo = this.todos.splice(i, 1);
+				syncModule.remove(todo[0].sync_id, todo[0], function(err, obj) {  });
+				this.render();
 			}
-
-			this.render();
 		},
 		destroy: function (e) {
-			this.todos.splice(this.indexFromEl(e.target), 1);
+			var todo = this.todos.splice(this.indexFromEl(e.target), 1);
+			syncModule.remove(todo[0].sync_id, todo[0], function(err, obj) {  });
 			this.render();
 		}
 	};

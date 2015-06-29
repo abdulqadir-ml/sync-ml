@@ -32,7 +32,6 @@ var SyncModule = function(appName)
 		{
 			if(err === null)
 			{
-				console.log(apiObj);
 				if(item.sync_op !== Syncer.OP.DELETE) storeManager.update(item.sync_uuid, Syncer.OP.NONE, apiObj);
 				else storeManager.remove(item.sync_uuid);
 			}

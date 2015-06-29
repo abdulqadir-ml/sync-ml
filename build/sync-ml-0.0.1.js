@@ -127,25 +127,25 @@ var StorageManager = function(appName)
 	};
 };
 var ConnectionManager = {
-	connectCallbacks: [],
-	disconnectCallbacks: [],
+
+	isInitialized: false,
 
 	init: function(onConnect, onDisconnect)
 	{
-		if(typeof onConnect === 'function') this.connectCallbacks.push(onConnect);
-		if(typeof onDisconnect === 'function') this.disconnectCallbacks.push(onDisconnect);
-
-		//register handlers when the internet connection gets up or down
-		var addEvent =  window.attachEvent || window.addEventListener;
-		var onlineEvent = window.attachEvent ? 'ononline' : 'online';
-		var offlineEvent = window.attachEvent ? 'onoffline' : 'offline';
-		addEvent(offlineEvent, onDisconnect);
-		addEvent(onlineEvent, onConnect);
+		if(typeof onConnect === 'callback' && typeof onDisconnect === 'callback')
+		{
+			this.isInitialized = true;
+			$(document).isOffline({ interval: 15000, baseUrl: "http://dev.marketlytics.com/offline/sample" })
+			.bind('isOnline', onConnect)
+			.bind("isOffline", onDisconnect);
+		}
 	},
 
-	isConnected: function()
+	triggerCallbacks: function()
 	{
-		window.navigator.onLine;
+		if(this.isInitialized) {
+			$(document).data("plugin_isOffline").check();
+		}
 	}
 };
 var Syncer = function()
@@ -153,7 +153,7 @@ var Syncer = function()
 
 	this.apiHandler = null,
 
-	this.init = function(apiHandler)
+	this.init = function(apiHandler, initArgs)
 	{
 		this.apiHandler = apiHandler;
 		if(typeof apiHandler.add !== 'function'
@@ -163,7 +163,7 @@ var Syncer = function()
 		{
 			throw 'Api Handler doesn\'t implement the expected interface!'
 		}
-		this.apiHandler.init();
+		if(typeof this.apiHandler.init === 'function') this.apiHandler.init(initArgs);
 	};
 
 	this.promiseHandler = function(promise, callback)
@@ -217,24 +217,16 @@ var SyncModule = function(appName)
 {
 	var _this = this;
 
-	var callbackOnSync = null;
 	var connManager = ConnectionManager;
 	var storeManager = new StorageManager(appName);
 	var syncer = new Syncer();
 	var syncFlag = false;
 
-	var onConnect = function()
-	{
-		setTimeout(function() {
-			_this.sync(callbackOnSync);
-		}, 3000);
-	};
-
-	var onDisconnect = function() {};
+	this.callbackOnSync = null;
 
 	this.init = function(apiHandler, syncCallback)
 	{
-		callbackOnSync = (typeof syncCallback == "function" ? syncCallback : null);
+		this.callbackOnSync = (typeof syncCallback == "function" ? syncCallback : null);
 		try
 		{
 			syncer.init(apiHandler);
@@ -244,9 +236,9 @@ var SyncModule = function(appName)
 			console.error(err);
 			syncer = null;
 		}
-		connManager.init(onConnect, onDisconnect);
+		connManager.init(SyncModule.onConnect, SyncModule.onDisconnect);
 		storeManager.init();
-		this.sync(callbackOnSync);
+		this.sync(this.callbackOnSync);
 	};
 
 	this.syncItem = function(item, callback)
@@ -255,7 +247,6 @@ var SyncModule = function(appName)
 		{
 			if(err === null)
 			{
-				console.log(apiObj);
 				if(item.sync_op !== Syncer.OP.DELETE) storeManager.update(item.sync_uuid, Syncer.OP.NONE, apiObj);
 				else storeManager.remove(item.sync_uuid);
 			}
@@ -363,6 +354,16 @@ var SyncModule = function(appName)
 		return syncFlag;
 	};
 };
+
+SyncModule.onConnect = function()
+{
+	var _this = this;
+	setTimeout(function() {
+		_this.sync(_this.callbackOnSync);
+	}, 3000);
+};
+
+SyncModule.onDisconnect = function() {};
 
 window.SyncModule = SyncModule;
 })(window);

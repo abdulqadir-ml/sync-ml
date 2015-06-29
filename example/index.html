@@ -3,6 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<title>jQuery • TodoMVC</title>
+		<script src="http://www.parsecdn.com/js/parse-1.4.2.min.js"></script>
 		<link rel="stylesheet" href="node_modules/todomvc-common/base.css">
 		<link rel="stylesheet" href="node_modules/todomvc-app-css/index.css">
 		<link rel="stylesheet" href="css/app.css">
@@ -27,7 +28,7 @@
 		</footer>
 		<script id="todo-template" type="text/x-handlebars-template">
 			{{#this}}
-			<li {{#if completed}}class="completed"{{/if}} data-id="{{id}}">
+			<li {{#if completed}}class="completed"{{/if}} data-id="{{sync_id}}">
 				<div class="view">
 					<input class="toggle" type="checkbox" {{#if completed}}checked{{/if}}>
 					<label>{{title}}</label>
@@ -56,6 +57,8 @@
 		<script src="node_modules/jquery/dist/jquery.js"></script>
 		<script src="node_modules/handlebars/dist/handlebars.js"></script>
 		<script src="node_modules/director/build/director.js"></script>
+		<script src="../build/sync-ml-0.0.1-min.js"></script>
+		<script src="js/parse.js"></script>
 		<script src="js/app.js"></script>
 	</body>
 </html>

@@ -3,7 +3,7 @@ var Syncer = function()
 
 	this.apiHandler = null,
 
-	this.init = function(apiHandler)
+	this.init = function(apiHandler, initArgs)
 	{
 		this.apiHandler = apiHandler;
 		if(typeof apiHandler.add !== 'function'
@@ -13,7 +13,7 @@ var Syncer = function()
 		{
 			throw 'Api Handler doesn\'t implement the expected interface!'
 		}
-		this.apiHandler.init();
+		if(typeof this.apiHandler.init === 'function') this.apiHandler.init(initArgs);
 	};
 
 	this.promiseHandler = function(promise, callback)
