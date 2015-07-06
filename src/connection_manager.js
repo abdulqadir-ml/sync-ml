@@ -1,13 +1,17 @@
 var ConnectionManager = {
-
+	
 	isInitialized: false,
 
-	init: function(onConnect, onDisconnect)
+	init: function(onConnect, onDisconnect, url)
 	{
-		if(typeof onConnect === 'callback' && typeof onDisconnect === 'callback')
+		if(typeof onConnect === 'function' && typeof onDisconnect === 'function')
 		{
 			this.isInitialized = true;
-			$(document).isOffline({ interval: 15000, baseUrl: "http://dev.marketlytics.com/offline/sample" })
+			var url = 'https://ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js';
+			if(window.location.hostname.indexOf('localhost') < 0) {
+				url = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' : '') + window.location.port;
+			}
+			$(document).isOffline({ baseUrl: url })
 			.bind('isOnline', onConnect)
 			.bind("isOffline", onDisconnect);
 		}

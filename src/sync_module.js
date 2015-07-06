@@ -21,7 +21,7 @@ var SyncModule = function(appName)
 			console.error(err);
 			syncer = null;
 		}
-		connManager.init(SyncModule.onConnect, SyncModule.onDisconnect);
+		connManager.init(SyncModule.onConnect.bind(this), SyncModule.onDisconnect.bind(this));
 		storeManager.init();
 		this.sync(this.callbackOnSync);
 	};
@@ -89,8 +89,7 @@ var SyncModule = function(appName)
 			for(var i = 0; i < items.length; i++)
 			{
 				var item = items[i];
-				this.syncItem(item, function()
-				{
+				this.syncItem(item, function() {
 					syncedItems.push(item);
 					if(syncedItems.length === items.length) fetch(callback);
 				});
@@ -137,17 +136,17 @@ var SyncModule = function(appName)
 	this.isSyncing = function()
 	{
 		return syncFlag;
+		console.log('adsfaf');
 	};
 };
 
 SyncModule.onConnect = function()
 {
-	var _this = this;
-	setTimeout(function() {
-		_this.sync(_this.callbackOnSync);
-	}, 3000);
+	this.sync(this.callbackOnSync);
 };
 
-SyncModule.onDisconnect = function() {};
+SyncModule.onDisconnect = function() {
+	console.log('disconnected!');
+};
 
 window.SyncModule = SyncModule;

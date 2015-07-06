@@ -25,12 +25,33 @@ module.exports = function(grunt) {
 				'build/<%= pkg.name %>-<%= pkg.version %>-min.js': ['build/<%= pkg.name %>-<%= pkg.version %>.js']
 			}
 		}
+	},
+	connect: {
+		server: {
+			options: {
+                port: 9000,
+				open: 'http://localhost:9000/example/',
+				livereload: true
+			}
+		}
+	},
+	watch: {
+		scripts: {
+			files: ['src/*.js'],
+			tasks: ['build'],
+			options: {
+				livereload: 9001
+			}
+		}
 	}
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-connect');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
-  grunt.registerTask('default', ['concat', 'uglify']);
+  grunt.registerTask('build', ['concat', 'uglify']);
+  grunt.registerTask('default', ['connect', 'watch']);
 
 };

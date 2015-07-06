@@ -127,15 +127,19 @@ var StorageManager = function(appName)
 	};
 };
 var ConnectionManager = {
-
+	
 	isInitialized: false,
 
-	init: function(onConnect, onDisconnect)
+	init: function(onConnect, onDisconnect, url)
 	{
-		if(typeof onConnect === 'callback' && typeof onDisconnect === 'callback')
+		if(typeof onConnect === 'function' && typeof onDisconnect === 'function')
 		{
 			this.isInitialized = true;
-			$(document).isOffline({ interval: 15000, baseUrl: "http://dev.marketlytics.com/offline/sample" })
+			var url = 'https://ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js';
+			if(window.location.hostname.indexOf('localhost') < 0) {
+				url = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' : '') + window.location.port;
+			}
+			$(document).isOffline({ baseUrl: url })
 			.bind('isOnline', onConnect)
 			.bind("isOffline", onDisconnect);
 		}
@@ -236,7 +240,7 @@ var SyncModule = function(appName)
 			console.error(err);
 			syncer = null;
 		}
-		connManager.init(SyncModule.onConnect, SyncModule.onDisconnect);
+		connManager.init(SyncModule.onConnect.bind(this), SyncModule.onDisconnect.bind(this));
 		storeManager.init();
 		this.sync(this.callbackOnSync);
 	};
@@ -304,8 +308,7 @@ var SyncModule = function(appName)
 			for(var i = 0; i < items.length; i++)
 			{
 				var item = items[i];
-				this.syncItem(item, function()
-				{
+				this.syncItem(item, function() {
 					syncedItems.push(item);
 					if(syncedItems.length === items.length) fetch(callback);
 				});
@@ -352,18 +355,18 @@ var SyncModule = function(appName)
 	this.isSyncing = function()
 	{
 		return syncFlag;
+		console.log('adsfaf');
 	};
 };
 
 SyncModule.onConnect = function()
 {
-	var _this = this;
-	setTimeout(function() {
-		_this.sync(_this.callbackOnSync);
-	}, 3000);
+	this.sync(this.callbackOnSync);
 };
 
-SyncModule.onDisconnect = function() {};
+SyncModule.onDisconnect = function() {
+	console.log('disconnected!');
+};
 
 window.SyncModule = SyncModule;
 })(window);
