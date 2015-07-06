@@ -1,0 +1,3 @@
+[submodule "src/jquery-isoffline"]
+	path = src/jquery-isoffline
+	url = https://abdulqadir-ml@github.com/marketlytics/jquery-isoffline.git
